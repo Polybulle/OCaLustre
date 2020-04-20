@@ -35,23 +35,25 @@ let rec print_type_expr fmt e=
   in
   Format.fprintf fmt "%a\n" p e
 
-let env_growing = ref []
-  let print_type st =
-    let env = Compmisc.initial_env () in
-    let env = List.fold_left (fun acc x -> Env.add_signature x acc) env !env_growing in
-    (* Pprintast.structure Format.std_formatter st; *)
-    let (tf,ts,_) = try Typemod.type_structure env st Location.none
-                      with Ctype.Unify x ->
-                        let (x,y) = List.hd x in
-                        let s = Format.asprintf "Unification error between %a and %a"
-                              Printtyp.type_expr x Printtyp.type_expr y in
-                        Error.print_error Location.none s
- in
-    (* Printtyped.implementation Format.std_formatter tf; *)
-    Format.fprintf Format.std_formatter "%a\n" Printtyp.signature ts;
-    env_growing := ts::!env_growing ;
-        (* let str = List.hd ts in *)
-        (* (match str with *)
-         (* | Sig_value (_,v) -> *)
-           (* print_type_expr Format.std_formatter v.val_type; *)
-        (* | _ -> print_string "other") *)
+let print_type st = Pprintast.structure Format.std_formatter st
+
+(* let env_growing = ref []
+ * let print_type st =
+ *   let env = Compmisc.initial_env () in
+ *   let env = List.fold_left (fun acc x -> Env.add_signature x acc) env !env_growing in
+ *   (\* Pprintast.structure Format.std_formatter st; *\)
+ *   let (tf,ts,_,_) = try Typemod.type_structure env st Location.none
+ *     with Ctype.Unify x ->
+ *       let (x,y) = List.hd x in
+ *       let s = Format.asprintf "Unification error between %a and %a"
+ *           Printtyp.type_expr x Printtyp.type_expr y in
+ *       Error.print_error Location.none s
+ *   in
+ *   (\* Printtyped.implementation Format.std_formatter tf; *\)
+ *   Format.fprintf Format.std_formatter "%a\n" Printtyp.signature ts;
+ *   env_growing := ts::!env_growing ;
+ *   (\* let str = List.hd ts in *\)
+ *   (\* (match str with *\)
+ *   (\* | Sig_value (_,v) -> *\)
+ *   (\* print_type_expr Format.std_formatter v.val_type; *\)
+ *   (\* | _ -> print_string "other") *\) *)

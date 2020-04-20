@@ -36,6 +36,7 @@ let rec tocaml_expression e =
     { pexp_desc = Pexp_field ([%expr state ],
                               lid_of_ident i);
       pexp_loc = Location.none;
+      pexp_loc_stack = [];
       pexp_attributes = [];
     }
   | S_RefDef e -> [%expr ref [%e tocaml_expression e ] ]
@@ -85,6 +86,7 @@ let rec tocaml_expression e =
     let l = List.map (fun e -> Nolabel,e) el' in
     { pexp_desc = Pexp_apply (Exp.ident (lid_of_ident id),l);
       pexp_loc = Location.none;
+      pexp_loc_stack = [];
       pexp_attributes = [];
     }
   | S_Application_init (id,num,el) ->
@@ -96,6 +98,7 @@ let rec tocaml_expression e =
     let l = List.map (fun e -> Nolabel,e) el' in
     { pexp_desc = Pexp_apply (Exp.ident (lid_of_ident id),l);
       pexp_loc = Location.none;
+      pexp_loc_stack = [];
       pexp_attributes = [];
     }
   | S_Alternative (e1,e2,e3) ->
@@ -120,6 +123,7 @@ let rec tocaml_expression e =
     let l = List.map (fun e -> Nolabel,e) el' in
     { pexp_desc = Pexp_apply (Exp.ident (lid_of_ident f),l);
       pexp_loc = Location.none;
+      pexp_loc_stack = [];
       pexp_attributes = [];
     }
 
@@ -138,15 +142,18 @@ let stringloc_of_string s =
 let pat_of_string s =
   { ppat_desc = Ppat_var (stringloc_of_string s);
     ppat_loc = Location.none;
+    ppat_loc_stack = [];
     ppat_attributes = [] }
 
 let rec pat_of_list l =
   match l with
     [] -> { ppat_desc = Ppat_construct (lident_of_string "()", None);
+            ppat_loc_stack = [];
             ppat_loc = Location.none;
             ppat_attributes = [] }
   | h::t ->
     { ppat_desc = Ppat_var (stringloc_of_string h);
+      ppat_loc_stack = [];
       ppat_loc = Location.none;
       ppat_attributes = [] }
 
@@ -164,26 +171,31 @@ let stringloc_of_pattern ?(prefix="") ?(suffix="") p =
 let rec pat_of_pattern p =
   match p.p_desc with
   | Ident i -> { ppat_desc = Ppat_var (stringloc_of_pattern p) ;
+                 ppat_loc_stack = [];
                  ppat_loc = p.p_loc ;
                  ppat_attributes = [] }
   | Tuple t ->
     let tl = List.map (fun p -> pat_of_pattern p) t in
     { ppat_desc = Ppat_tuple tl ;
       ppat_loc = p.p_loc ;
+      ppat_loc_stack = [];
       ppat_attributes = [] }
   | PUnit -> { ppat_desc = Ppat_construct (lident_of_string "()" ,None);
                ppat_loc = p.p_loc ;
+               ppat_loc_stack = [];
                ppat_attributes = [] }
   | Typed (p,s) ->
     let core_type = {
       ptyp_desc = Ptyp_constr(lident_of_string s,[]);
       ptyp_loc =  p.p_loc ;
+      ptyp_loc_stack = [];
       ptyp_attributes = [];
     }
     in
     {
       ppat_desc = Ppat_constraint (pat_of_pattern p, core_type) ;
       ppat_loc = p.p_loc;
+      ppat_loc_stack = [];
       ppat_attributes = []}
 
 
@@ -205,6 +217,7 @@ let rec tocaml_type_record l =
         pld_mutable = Mutable;
         pld_type =
           { ptyp_desc = Ptyp_var (String.make 1 (Char.chr (97+n)));
+            ptyp_loc_stack = [];
             ptyp_loc = Location.none;
             ptyp_attributes = [];
           };
@@ -221,6 +234,7 @@ let tocaml_type_params m =
     else
       let ty =
         { ptyp_desc = Ptyp_var (String.make 1 (Char.chr (97+n)));
+          ptyp_loc_stack = [];
           ptyp_loc = Location.none;
           ptyp_attributes = [];
         } in
@@ -263,8 +277,9 @@ let rec tocaml_state_next s name =
       [%expr [%e { pexp_desc = Pexp_setfield ([%expr state],
                                    lident_of_string x,
                                    Exp.ident (lident_of_string y));
-        pexp_loc = Location.none;
-        pexp_attributes = [];
+                   pexp_loc = Location.none;
+                   pexp_loc_stack = [];
+                   pexp_attributes = [];
       } ] ; [%e acc ] ]
     ) [%expr ()] l
 
@@ -282,6 +297,7 @@ let rec tocaml_state_zero s name =
   in
   { pexp_desc = Pexp_record (loop l,None);
     pexp_loc = Location.none ;
+    pexp_loc_stack = [];
     pexp_attributes = []
   }
 
@@ -406,7 +422,18 @@ let tocaml_main inode delay wcet =
   in
   [%stri
    let () =
-     [%e (Exp.open_ Asttypes.Fresh (lid_of_ident module_name) eloop)]
+     (* (lid_of_ident module_name) *)
+     (*[%e (let open_inf = {
+       popen_override = Asttypes.Fresh;
+       popen_loc = Location.none;
+       popen_attributes = [];
+       popen_expr = {
+         pmod_desc = Pmod_ident (lid_of_ident module_name);
+         pmod_loc = Location.none;
+         pmod_attributes = [];
+       }
+       } in (Exp.open_ open_inf eloop)) ] *)
+     [%e (exp_open Asttypes.Fresh module_name eloop)]
   ]
 
 

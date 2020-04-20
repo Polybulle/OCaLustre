@@ -108,6 +108,7 @@ and tocaml_expression e n =
                let magics =
                { pexp_desc = Parsetree.Pexp_tuple (dispatch n []);
                  pexp_loc = e'.pexp_loc;
+                 pexp_loc_stack = [];
                  pexp_attributes = [] }
              in
                [%expr if [%e cl] then [%e exp] else [%e magics ]]
@@ -138,6 +139,7 @@ and tocaml_expression e n =
     let l = List.map (fun e -> Nolabel,e) el' in
     { pexp_desc = Pexp_apply (Exp.ident (lid_of_ident f),l);
       pexp_loc = Location.none;
+      pexp_loc_stack = [];
       pexp_attributes = [];
     }
 
@@ -237,7 +239,7 @@ let tocaml_main inode delay =
       in
     [%stri
      let () =
-       [%e (Exp.open_ Asttypes.Fresh (lid_of_ident module_name) eloop)]
+       [%e (exp_open Asttypes.Fresh module_name eloop)]
     ]
   else
     let eloop = if (inode.i_inputs.p_desc <> Parsing_ast.PUnit ) then
@@ -270,9 +272,7 @@ let tocaml_main inode delay =
     in
     [%stri
      let () =
-       [%e (Exp.open_ Asttypes.Fresh (lid_of_ident module_name)
-              (eloop))
-       ]
+       [%e (exp_open Asttypes.Fresh module_name eloop) ]
     ]
 
 let tocaml_node inode =

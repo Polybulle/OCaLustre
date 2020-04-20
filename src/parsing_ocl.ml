@@ -141,6 +141,8 @@ let get_int e =
 
 (** Transforms OCaml expressions to node of the OCaLustre AST **)
 
+let attr_to_tup a = a.attr_name, a.attr_payload
+
 let make_expression e =
   let rec parse_updates e =
     match e with
@@ -150,7 +152,7 @@ let make_expression e =
   and mk_expr e =
     let attr = e.pexp_attributes in
     (* Format.printf "Number of attributes : %d \n" (List.length attr); *)
-    let clocks = List.map extract_clock attr in
+    let clocks = List.map (fun x -> extract_clock (attr_to_tup x)) attr in
 
     (* let clk = if attr <> [] then *)
         (* let a = List.hd attr in *)

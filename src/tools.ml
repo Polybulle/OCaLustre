@@ -115,27 +115,45 @@ let rec pat_of_pattern p =
   match p.p_desc with
   | Ident i -> { ppat_desc = Ppat_var (stringloc_of_pattern p) ;
                  ppat_loc = p.p_loc ;
-                 ppat_attributes = [] }
+                 ppat_attributes = [];
+                 ppat_loc_stack = []}
+
   | Tuple t ->
     let tl = List.map (fun p -> pat_of_pattern p) t in
     { ppat_desc = Ppat_tuple tl ;
       ppat_loc = p.p_loc ;
-      ppat_attributes = [] }
+      ppat_attributes = [];
+      ppat_loc_stack = []}
   | PUnit -> { ppat_desc = Ppat_construct (lid_of_ident "()" ,None);
                ppat_loc = p.p_loc ;
-               ppat_attributes = [] }
+               ppat_attributes = [];
+               ppat_loc_stack = []}
   | Typed (p,s) ->
     let core_type = {
        ptyp_desc = Ptyp_constr(lid_of_ident s,[]);
-     ptyp_loc =  p.p_loc ;
-     ptyp_attributes = [];
-    }
+       ptyp_loc =  p.p_loc ;
+       ptyp_attributes = [];
+       ptyp_loc_stack = []}
     in
     {
       ppat_desc = Ppat_constraint (pat_of_pattern p, core_type) ;
       ppat_loc = p.p_loc;
-      ppat_attributes = []}
+      ppat_attributes = [];
+      ppat_loc_stack = []}
 
+
+let exp_open flag name expr =
+  let open Ast_helper in
+  let open_inf = {
+       popen_override = flag;
+       popen_loc = Location.none;
+       popen_attributes = [];
+       popen_expr = {
+         pmod_desc = Pmod_ident (lid_of_ident name);
+         pmod_loc = Location.none;
+         pmod_attributes = [];
+       }
+     } in (Exp.open_ open_inf expr)
 
 let rec make_set l =
   match l with
